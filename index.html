@@ -3,15 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
     <title>Sistema Solar WebAR</title>
 
-    <!-- A-Frame y AR.js -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- A-Frame y AR.js - Versiones estables y compatibles -->
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
 
     <style>
         * {
@@ -20,8 +18,7 @@
             box-sizing: border-box;
         }
 
-        html,
-        body {
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -32,55 +29,59 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            position: fixed;
         }
 
-        /* Contenedor de la escena AR */
-        #arjs-video {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover !important;
-            z-index: -2 !important;
-        }
-
-        /* Canvas de A-Frame */
-        .a-canvas {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            z-index: -1 !important;
-        }
-
-        /* Estilos para el mensaje de carga */
+        /* Pantalla de carga */
         #loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: white;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             z-index: 9999;
+            transition: opacity 0.5s;
         }
 
         #loading.hidden {
-            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .loading-text {
-            margin-top: 20px;
-            font-size: 16px;
             text-align: center;
             padding: 0 20px;
+        }
+
+        .loading-text h2 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .loading-text p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 5px 0;
         }
 
         /* Indicador de estado AR */
@@ -88,67 +89,122 @@
             position: fixed;
             top: 10px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 20px;
             font-size: 12px;
             z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Controles de cámara */
-        #cameraControls {
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffa500;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #00ff00;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Panel de información */
+        #infoOverlay {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .camera-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.3s;
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 90%;
+            text-align: center;
+            z-index: 200;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .camera-btn:active {
-            background: rgba(255, 255, 255, 0.4);
+        #infoOverlay.visible {
+            display: block;
+            animation: slideUp 0.3s ease-out;
         }
 
-        .camera-btn.active {
-            background: rgba(0, 150, 255, 0.5);
-            border-color: #0096ff;
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 100px);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
         }
 
-        /* Selector de cámara */
-        #cameraSelector {
+        #infoOverlay h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            color: #4da6ff;
+        }
+
+        #infoOverlay p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* Controles */
+        #controls {
             position: fixed;
             top: 50px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px;
-            border-radius: 5px;
             z-index: 101;
-            display: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        #cameraSelect {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+        .control-btn {
+            background: rgba(0, 0, 0, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 5px;
-            border-radius: 3px;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
+
+        /* Instrucciones */
+        #instructions {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            z-index: 99;
+            text-align: center;
         }
     </style>
 </head>
@@ -156,418 +212,363 @@
 <body>
     <!-- Pantalla de carga -->
     <div id="loading">
+        <div class="loading-spinner"></div>
         <div class="loading-text">
             <h2>Sistema Solar AR</h2>
-            <p>Iniciando cámara...</p>
-            <p style="font-size: 12px; opacity: 0.8; margin-top: 10px;">
-                Permitir acceso a la cámara cuando se solicite
+            <p>Preparando experiencia...</p>
+            <p style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
+                Por favor, permite el acceso a la cámara
             </p>
         </div>
     </div>
 
     <!-- Indicador de estado -->
-    <div id="arStatus">Iniciando AR...</div>
-
-    <!-- Selector de cámara (para dispositivos con múltiples cámaras) -->
-    <div id="cameraSelector">
-        <select id="cameraSelect">
-            <option value="">Seleccionar cámara...</option>
-        </select>
+    <div id="arStatus">
+        <div class="status-dot"></div>
+        <span>Iniciando AR...</span>
+    </div>
+    
+    <!-- Controles -->
+    <div id="controls">
+        <button class="control-btn" id="resetBtn">🔄 Resetear</button>
+        <button class="control-btn" id="infoBtn">ℹ️ Info</button>
     </div>
 
-    <!-- Controles de cámara -->
-    <div id="cameraControls" style="display: none;">
-        <button class="camera-btn" id="switchCamera">Cambiar Cámara</button>
-        <button class="camera-btn" id="resetView">Resetear Vista</button>
+    <!-- Panel de información overlay -->
+    <div id="infoOverlay">
+        <h3 id="overlayTitle">Planeta</h3>
+        <p id="overlayText">Información del planeta</p>
+    </div>
+
+    <!-- Instrucciones -->
+    <div id="instructions">
+        Toca un planeta para ver información
     </div>
 
     <!-- Escena A-Frame con AR.js -->
-    <a-scene id="arScene" embedded arjs="sourceType: webcam; 
+    <a-scene
+        embedded
+        arjs="sourceType: webcam; 
               debugUIEnabled: false; 
               detectionMode: mono_and_matrix; 
               matrixCodeType: 3x3;
-              cameraParametersUrl: data/camera_para.dat;
-              changeMatrixMode: modelViewMatrix;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; 
-                  precision: mediump; 
-                  antialias: true; 
-                  alpha: true;
+              patternRatio: 0.75;
+              trackingMethod: best;"
+        vr-mode-ui="enabled: false"
+        renderer="antialias: true; 
+                  alpha: true; 
+                  logarithmicDepthBuffer: true;
                   colorManagement: true;
-                  physicallyCorrectLights: false;" loading-screen="enabled: false">
-
-        <!-- Assets -->
-        <a-assets timeout="10000">
-        </a-assets>
+                  sortObjects: true;"
+        stats="false">
 
         <!-- Cámara AR -->
-        <a-camera-static />
+        <a-entity camera></a-entity>
 
-        <!-- Marcador QR -->
-        <a-marker id="markerQR" type="pattern" preset="custom" url="pattern-qr.patt" smooth="true" smoothCount="10"
-            smoothTolerance="0.01" smoothThreshold="5" emitevents="true">
+        <!-- Marcador Pattern -->
+        <a-marker 
+            id="marker"
+            type="pattern" 
+            url="pattern-qr.patt"
+            smooth="true"
+            smoothCount="5"
+            smoothTolerance="0.01"
+            smoothThreshold="5">
 
-            <!-- Contenedor principal del sistema solar -->
-            <a-entity id="solarSystem" position="0 0 0" scale="0.4 0.4 0.4">
+            <!-- Contenedor del Sistema Solar -->
+            <a-entity id="solarSystem" scale="0.5 0.5 0.5">
 
-                <!-- Sistema Solar -->
-                <a-entity id="solarSystemPrimitives">
-                    <!-- Sol -->
-                    <a-sphere id="sun" position="0 0 0" radius="0.8"
-                        material="color: #FDB813; emissive: #FFA000; emissiveIntensity: 0.6; shader: flat">
-                        <a-light type="point" color="#FFF5E1" intensity="0.3"></a-light>
+                <!-- Sol central -->
+                <a-sphere 
+                    id="sun"
+                    radius="0.7"
+                    color="#FDB813"
+                    emissive="#FFA000"
+                    emissiveIntensity="0.5">
+                    <a-animation
+                        attribute="rotation"
+                        to="0 360 0"
+                        dur="20000"
+                        repeat="indefinite"
+                        easing="linear">
+                    </a-animation>
+                </a-sphere>
+
+                <!-- Luz del sol -->
+                <a-light type="point" color="#FFF5E6" intensity="0.5" position="0 0 0"></a-light>
+                <a-light type="ambient" color="#404040" intensity="0.3"></a-light>
+
+                <!-- Órbitas visuales -->
+                <a-ring rotation="-90 0 0" radius-inner="1.2" radius-outer="1.25" color="#333333" opacity="0.4"></a-ring>
+                <a-ring rotation="-90 0 0" radius-inner="1.7" radius-outer="1.75" color="#333333" opacity="0.4"></a-ring>
+                <a-ring rotation="-90 0 0" radius-inner="2.3" radius-outer="2.35" color="#333333" opacity="0.4"></a-ring>
+                <a-ring rotation="-90 0 0" radius-inner="3.0" radius-outer="3.05" color="#333333" opacity="0.4"></a-ring>
+
+                <!-- Mercurio -->
+                <a-entity id="mercuryOrbit" rotation="0 0 0">
+                    <a-animation
+                        attribute="rotation"
+                        to="0 360 0"
+                        dur="8000"
+                        repeat="indefinite"
+                        easing="linear">
+                    </a-animation>
+                    <a-sphere 
+                        id="mercury"
+                        class="planet"
+                        position="1.2 0 0"
+                        radius="0.08"
+                        color="#8C7853"
+                        data-name="Mercurio"
+                        data-info="El planeta más pequeño y cercano al Sol. Tarda 88 días en dar una vuelta completa.">
                     </a-sphere>
-
-                    <!-- Órbitas -->
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="1.5" radius-outer="1.52"
-                        material="color: #333; opacity: 0.3; shader: flat"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2" radius-outer="2.02"
-                        material="color: #333; opacity: 0.3; shader: flat"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2.7" radius-outer="2.72"
-                        material="color: #333; opacity: 0.3; shader: flat"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="3.5" radius-outer="3.52"
-                        material="color: #333; opacity: 0.3; shader: flat"></a-ring>
-
-                    <!-- Mercurio -->
-                    <a-entity id="mercuryOrbit"
-                        animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
-                        <a-sphere position="1.5 0 0" radius="0.1" material="color: #8C7853; shader: flat"
-                            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000">
-                        </a-sphere>
-                    </a-entity>
-
-                    <!-- Venus -->
-                    <a-entity id="venusOrbit"
-                        animation="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear">
-                        <a-sphere position="2 0 0" radius="0.15" material="color: #FFC649; shader: flat"
-                            animation="property: rotation; to: 0 -360 0; loop: true; dur: 8000">
-                        </a-sphere>
-                    </a-entity>
-
-                    <!-- Tierra -->
-                    <a-entity id="earthOrbit"
-                        animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-                        <a-sphere position="2.7 0 0" radius="0.15" material="color: #4169E1; shader: flat"
-                            animation="property: rotation; to: 0 360 0; loop: true; dur: 3000">
-                        </a-sphere>
-                        <!-- Luna -->
-                        <a-entity position="2.7 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 2000">
-                            <a-sphere position="0.25 0 0" radius="0.04"
-                                material="color: #C0C0C0; shader: flat"></a-sphere>
-                        </a-entity>
-                    </a-entity>
-
-                    <!-- Marte -->
-                    <a-entity id="marsOrbit"
-                        animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; easing: linear">
-                        <a-sphere position="3.5 0 0" radius="0.12" material="color: #CD5C5C; shader: flat"
-                            animation="property: rotation; to: 0 360 0; loop: true; dur: 3500">
-                        </a-sphere>
-                    </a-entity>
                 </a-entity>
 
-                <!-- Panel de información -->
-                <a-plane id="infoPanel" visible="false" position="0 1.5 0" width="2.5" height="1.2"
-                    material="color: #000000; opacity: 0.8; shader: flat">
-                    <a-text id="planetName" position="0 0.3 0.01" value="Planeta" align="center" color="#FFFFFF"
-                        width="4">
-                    </a-text>
-                    <a-text id="planetInfo" position="0 -0.1 0.01" value="Información" align="center" color="#FFFFFF"
-                        width="2.3" wrap-count="40">
-                    </a-text>
-                </a-plane>
+                <!-- Venus -->
+                <a-entity id="venusOrbit" rotation="0 0 0">
+                    <a-animation
+                        attribute="rotation"
+                        to="0 360 0"
+                        dur="12000"
+                        repeat="indefinite"
+                        easing="linear">
+                    </a-animation>
+                    <a-sphere 
+                        id="venus"
+                        class="planet"
+                        position="1.7 0 0"
+                        radius="0.14"
+                        color="#FFC649"
+                        data-name="Venus"
+                        data-info="El planeta más caliente del sistema solar debido a su densa atmósfera.">
+                    </a-sphere>
+                </a-entity>
+
+                <!-- Tierra -->
+                <a-entity id="earthOrbit" rotation="0 0 0">
+                    <a-animation
+                        attribute="rotation"
+                        to="0 360 0"
+                        dur="15000"
+                        repeat="indefinite"
+                        easing="linear">
+                    </a-animation>
+                    <a-sphere 
+                        id="earth"
+                        class="planet"
+                        position="2.3 0 0"
+                        radius="0.15"
+                        color="#4169E1"
+                        data-name="Tierra"
+                        data-info="Nuestro hogar, el único planeta conocido que alberga vida.">
+                        <!-- Luna -->
+                        <a-entity rotation="0 0 0">
+                            <a-animation
+                                attribute="rotation"
+                                to="0 360 0"
+                                dur="2000"
+                                repeat="indefinite"
+                                easing="linear">
+                            </a-animation>
+                            <a-sphere position="0.25 0 0" radius="0.03" color="#C0C0C0"></a-sphere>
+                        </a-entity>
+                    </a-sphere>
+                </a-entity>
+
+                <!-- Marte -->
+                <a-entity id="marsOrbit" rotation="0 0 0">
+                    <a-animation
+                        attribute="rotation"
+                        to="0 360 0"
+                        dur="20000"
+                        repeat="indefinite"
+                        easing="linear">
+                    </a-animation>
+                    <a-sphere 
+                        id="mars"
+                        class="planet"
+                        position="3.0 0 0"
+                        radius="0.11"
+                        color="#CD5C5C"
+                        data-name="Marte"
+                        data-info="El planeta rojo. Tiene el volcán más alto del sistema solar: el Monte Olimpo.">
+                    </a-sphere>
+                </a-entity>
 
             </a-entity>
         </a-marker>
     </a-scene>
 
     <script>
-        // Configuración de cámara específica para móviles
-        let currentCamera = 'environment'; // environment = cámara trasera, user = cámara frontal
-        let videoStream = null;
-        let availableCameras = [];
-
-        // Función para obtener las cámaras disponibles
-        async function getCameras() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                availableCameras = devices.filter(device => device.kind === 'videoinput');
-
-                if (availableCameras.length > 1) {
-                    document.getElementById('cameraSelector').style.display = 'block';
-                    const select = document.getElementById('cameraSelect');
-
-                    availableCameras.forEach((camera, index) => {
-                        const option = document.createElement('option');
-                        option.value = camera.deviceId;
-                        option.text = camera.label || `Cámara ${index + 1}`;
-                        select.appendChild(option);
-                    });
-                }
-            } catch (err) {
-                console.error('Error al obtener cámaras:', err);
-            }
-        }
-
-        // Función para configurar la cámara
-        async function setupCamera(facingMode = 'environment') {
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: facingMode,
-                        width: { ideal: 1920, max: 2560 },
-                        height: { ideal: 1080, max: 1440 },
-                        aspectRatio: { ideal: 16 / 9 },
-                        frameRate: { ideal: 30, max: 60 }
-                    },
-                    audio: false
-                };
-
-                // Para navegadores basados en Chromium en móviles
-                if (/Android/i.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent)) {
-                    constraints.video = {
-                        facingMode: { exact: facingMode },
-                        width: { min: 640, ideal: 1280, max: 1920 },
-                        height: { min: 480, ideal: 720, max: 1080 }
-                    };
-                }
-
-                // Para iOS
-                if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                    constraints.video = {
-                        facingMode: facingMode,
-                        width: { min: 640, ideal: 1280 },
-                        height: { min: 480, ideal: 720 }
-                    };
-                }
-
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                // Aplicar el stream al video de AR.js
-                const video = document.querySelector('#arjs-video');
-                if (video && stream) {
-                    video.srcObject = stream;
-                    videoStream = stream;
-                }
-
-                return stream;
-            } catch (err) {
-                console.error('Error al configurar cámara:', err);
-                // Intentar con configuración básica si falla
-                return navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false
-                });
-            }
-        }
-
-        // Función para cambiar de cámara
-        async function switchCamera() {
-            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
-
-            // Detener el stream actual
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-            }
-
-            // Configurar nueva cámara
-            await setupCamera(currentCamera);
-
-            // Actualizar botón
-            const btn = document.getElementById('switchCamera');
-            btn.textContent = currentCamera === 'environment' ? 'Cámara Frontal' : 'Cámara Trasera';
-        }
-
-        // Base de datos de planetas con su información
-        const planetsData = {
-            mercury: {
-                name: "Mercurio",
-                info: "El planeta más pequeño y cercano al Sol. Un año en Mercurio dura solo 88 días terrestres.",
-                color: "#8C7853"
-            },
-            venus: {
-                name: "Venus",
-                info: "El planeta más caliente del sistema solar. Su atmósfera atrapa el calor como un invernadero extremo.",
-                color: "#FFC649"
-            },
-            earth: {
-                name: "Tierra",
-                info: "Nuestro hogar, el único planeta conocido con vida. El 71% de su superficie está cubierta de agua.",
-                color: "#4169E1"
-            },
-            mars: {
-                name: "Marte",
-                info: "El planeta rojo. Tiene el volcán más alto del sistema solar: el Monte Olimpo con 21 km de altura.",
-                color: "#CD5C5C"
-            },
-            jupiter: {
-                name: "Júpiter",
-                info: "El gigante del sistema solar. Su Gran Mancha Roja es una tormenta más grande que la Tierra.",
-                color: "#DAA520"
-            },
-            saturn: {
-                name: "Saturno",
-                info: "Famoso por sus anillos. Es tan ligero que flotaría en agua si hubiera un océano lo suficientemente grande.",
-                color: "#F4A460"
-            },
-            uranus: {
-                name: "Urano",
-                info: "Gira de lado, con una inclinación de 98 grados. Sus estaciones duran 21 años terrestres cada una.",
-                color: "#4FD0E7"
-            },
-            neptune: {
-                name: "Neptuno",
-                info: "El planeta con los vientos más rápidos del sistema solar, alcanzando hasta 2,100 km/h.",
-                color: "#4166F5"
-            }
-        };
+        // Variables globales
+        let markerVisible = false;
+        let currentPlanet = null;
 
         // Función para mostrar información del planeta
-        function showPlanetInfo(planetId) {
-            const planet = planetsData[planetId];
-            if (!planet) return;
-
-            const infoPanel = document.getElementById('infoPanel');
-            const nameText = document.getElementById('planetName');
-            const infoText = document.getElementById('planetInfo');
-
-            nameText.setAttribute('value', planet.name);
-            infoText.setAttribute('value', planet.info);
-            infoPanel.setAttribute('visible', true);
-
+        function showPlanetInfo(planetEl) {
+            const name = planetEl.getAttribute('data-name');
+            const info = planetEl.getAttribute('data-info');
+            
+            const overlay = document.getElementById('infoOverlay');
+            document.getElementById('overlayTitle').textContent = name;
+            document.getElementById('overlayText').textContent = info;
+            
+            overlay.classList.add('visible');
+            currentPlanet = name;
+            
             // Ocultar después de 5 segundos
             setTimeout(() => {
-                infoPanel.setAttribute('visible', false);
+                overlay.classList.remove('visible');
             }, 5000);
         }
 
         // Inicialización
-        document.addEventListener('DOMContentLoaded', async function () {
+        window.addEventListener('load', function() {
             const scene = document.querySelector('a-scene');
-            const marker = document.querySelector('#markerQR');
-            const loadingDiv = document.querySelector('#loading');
-            const arStatus = document.querySelector('#arStatus');
-            const cameraControls = document.querySelector('#cameraControls');
+            const marker = document.querySelector('#marker');
+            const loading = document.getElementById('loading');
+            const arStatus = document.getElementById('arStatus');
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = arStatus.querySelector('span');
+            const instructions = document.getElementById('instructions');
 
-            // Obtener cámaras disponibles
-            await getCameras();
+            // Configurar la escena
+            if (scene.hasLoaded) {
+                onSceneLoaded();
+            } else {
+                scene.addEventListener('loaded', onSceneLoaded);
+            }
 
-            // Configurar listeners de la escena
-            scene.addEventListener('loaded', function () {
-                console.log('Escena A-Frame cargada');
-
-                // Configurar cámara inicial
-                setTimeout(() => {
-                    setupCamera('environment');
-                }, 1000);
-
-                // Mostrar controles
-                cameraControls.style.display = 'flex';
-
+            function onSceneLoaded() {
+                console.log('Escena AR cargada');
+                
                 // Ocultar pantalla de carga
                 setTimeout(() => {
-                    loadingDiv.classList.add('hidden');
-                    arStatus.textContent = '📷 Apunta al marcador QR';
-                    arStatus.style.background = 'rgba(0, 0, 255, 0.7)';
+                    loading.classList.add('hidden');
+                    statusText.textContent = 'Buscando marcador...';
+                    instructions.style.display = 'none'; // Ocultar por ahora
                 }, 2000);
-            });
+
+                // Configurar clicks en planetas
+                const planets = document.querySelectorAll('.planet');
+                planets.forEach(planet => {
+                    planet.addEventListener('click', function() {
+                        if (markerVisible) {
+                            showPlanetInfo(this);
+                        }
+                    });
+                });
+
+                // Para dispositivos táctiles
+                scene.addEventListener('click', function(evt) {
+                    if (!markerVisible) return;
+                    
+                    if (evt.detail && evt.detail.intersection) {
+                        const el = evt.detail.intersection.object.el;
+                        if (el && el.classList.contains('planet')) {
+                            showPlanetInfo(el);
+                        }
+                    }
+                });
+            }
 
             // Eventos del marcador
-            marker.addEventListener('markerFound', function () {
+            marker.addEventListener('markerFound', function() {
                 console.log('Marcador detectado');
-                arStatus.textContent = '✓ Sistema Solar Activo';
-                arStatus.style.background = 'rgba(0, 128, 0, 0.7)';
+                markerVisible = true;
+                statusDot.classList.add('active');
+                statusText.textContent = 'Sistema Solar activo';
+                instructions.style.display = 'block';
             });
 
-            marker.addEventListener('markerLost', function () {
+            marker.addEventListener('markerLost', function() {
                 console.log('Marcador perdido');
-                arStatus.textContent = '⚠ Buscando marcador...';
-                arStatus.style.background = 'rgba(255, 165, 0, 0.7)';
-                document.getElementById('infoPanel').setAttribute('visible', false);
+                markerVisible = false;
+                statusDot.classList.remove('active');
+                statusText.textContent = 'Buscando marcador...';
+                instructions.style.display = 'none';
+                document.getElementById('infoOverlay').classList.remove('visible');
             });
 
-            // Configurar botones
-            document.getElementById('switchCamera').addEventListener('click', switchCamera);
-
-            document.getElementById('resetView').addEventListener('click', function () {
-                // Resetear la vista
+            // Botón de reset
+            document.getElementById('resetBtn').addEventListener('click', function() {
                 const solarSystem = document.getElementById('solarSystem');
-                solarSystem.setAttribute('scale', '0.4 0.4 0.4');
-                solarSystem.setAttribute('position', '0 0 0');
-                document.getElementById('infoPanel').setAttribute('visible', false);
+                solarSystem.setAttribute('scale', '0.5 0.5 0.5');
+                solarSystem.setAttribute('rotation', '0 0 0');
+                document.getElementById('infoOverlay').classList.remove('visible');
             });
 
-            // Selector de cámara específica
-            document.getElementById('cameraSelect').addEventListener('change', async function (e) {
-                if (e.target.value) {
-                    if (videoStream) {
-                        videoStream.getTracks().forEach(track => track.stop());
-                    }
-
-                    const constraints = {
-                        video: {
-                            deviceId: { exact: e.target.value }
-                        },
-                        audio: false
-                    };
-
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                        const video = document.querySelector('#arjs-video');
-                        if (video) {
-                            video.srcObject = stream;
-                            videoStream = stream;
-                        }
-                    } catch (err) {
-                        console.error('Error al cambiar cámara:', err);
-                    }
-                }
+            // Botón de información
+            document.getElementById('infoBtn').addEventListener('click', function() {
+                const overlay = document.getElementById('infoOverlay');
+                document.getElementById('overlayTitle').textContent = 'Sistema Solar AR';
+                document.getElementById('overlayText').textContent = 'Apunta tu cámara al marcador QR para ver el sistema solar en realidad aumentada. Toca los planetas para conocer más sobre ellos.';
+                overlay.classList.add('visible');
+                
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                }, 4000);
             });
 
-            // Manejar clicks en planetas (simplificado para móviles)
-            let touchTimer;
-            scene.addEventListener('click', function (evt) {
-                if (evt.detail && evt.detail.intersection) {
-                    const el = evt.detail.intersection.object.el;
-                    if (el && el.id && el.id.includes('Orbit')) {
-                        const planetId = el.id.replace('Orbit', '');
-                        showPlanetInfo(planetId);
-                    }
-                }
-            });
-
-            // Optimización específica para móviles
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            // Optimización para móviles
+            if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                 console.log('Dispositivo móvil detectado');
-
-                // Ajustar escala para móviles
+                
+                // Ajustar escala
                 const solarSystem = document.getElementById('solarSystem');
-                solarSystem.setAttribute('scale', '0.3 0.3 0.3');
-
-                // Desactivar sombras para mejor rendimiento
-                scene.setAttribute('shadow', 'autoUpdate: false');
-
-                // Reducir la calidad de renderizado para mejor rendimiento
-                scene.setAttribute('renderer', 'antialias: false; logarithmicDepthBuffer: true; precision: mediump');
+                
+                // Para pantallas pequeñas
+                if (window.innerWidth < 768) {
+                    solarSystem.setAttribute('scale', '0.4 0.4 0.4');
+                }
+                
+                // Prevenir zoom accidental
+                document.addEventListener('gesturestart', function(e) {
+                    e.preventDefault();
+                });
+                
+                // Mejorar respuesta táctil
+                let touchTimeout;
+                scene.canvas.addEventListener('touchstart', function(e) {
+                    touchTimeout = setTimeout(() => {
+                        const touch = e.touches[0];
+                        const clickEvent = new MouseEvent('click', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true,
+                            clientX: touch.clientX,
+                            clientY: touch.clientY
+                        });
+                        e.target.dispatchEvent(clickEvent);
+                    }, 100);
+                });
+                
+                scene.canvas.addEventListener('touchend', function() {
+                    clearTimeout(touchTimeout);
+                });
             }
 
             // Manejar errores de cámara
-            scene.addEventListener('camera-error', function (err) {
-                console.error('Error de cámara:', err);
-                alert(err)
-                const loadingText = loadingDiv.querySelector('.loading-text');
-                loadingText.innerHTML = '<h2>Error</h2><p>No se pudo acceder a la cámara</p>';
-            });
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    console.log('Cámara iniciada correctamente');
+                    stream.getTracks().forEach(track => track.stop());
+                })
+                .catch(function(err) {
+                    console.error('Error de cámara:', err);
+                    loading.querySelector('.loading-text').innerHTML = 
+                        '<h2>Error de Cámara</h2><p>No se pudo acceder a la cámara. Por favor, verifica los permisos.</p>';
+                });
         });
 
-        // Prevenir zoom en iOS
-        document.addEventListener('gesturestart', function (e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('touchmove', function (e) {
-            if (e.scale !== 1) {
-                e.preventDefault();
+        // Manejo de visibilidad de página
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('App en segundo plano');
+            } else {
+                console.log('App activa');
             }
-        }, { passive: false });
+        });
     </script>
 </body>
 
