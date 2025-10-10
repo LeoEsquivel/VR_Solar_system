@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Sistema Solar WebAR</title>
-    
+
     <!-- A-Frame y AR.js -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
+
     <style>
         body {
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
         }
-        
+
         /* Estilos para el mensaje de carga */
         #loading {
             position: fixed;
@@ -32,18 +33,18 @@
             flex-direction: column;
             z-index: 9999;
         }
-        
+
         #loading.hidden {
             display: none;
         }
-        
+
         .loading-text {
             margin-top: 20px;
             font-size: 18px;
             text-align: center;
             padding: 0 20px;
         }
-        
+
         /* Indicador de estado AR */
         #arStatus {
             position: fixed;
@@ -58,6 +59,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Pantalla de carga -->
     <div id="loading">
@@ -67,163 +69,169 @@
             <p style="font-size: 14px; opacity: 0.8;">Permitir acceso a la cámara cuando se solicite</p>
         </div>
     </div>
-    
+
     <!-- Indicador de estado -->
     <div id="arStatus">Iniciando AR...</div>
-    
+
     <!-- Escena A-Frame con AR.js -->
-    <a-scene
-        embedded
+    <a-scene embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         vr-mode-ui="enabled: false"
         renderer="logarithmicDepthBuffer: true; precision: high; antialias: true; alpha: true;">
-        
+
         <!-- Assets -->
         <a-assets>
-            <!-- Modelo 3D del sistema solar -->
-            <!-- <a-asset-item id="solarModel" src="modelo_solar.glb"></a-asset-item> -->
+            <img id="sunTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/sun.jpg"
+                crossorigin="anonymous">
+            <img id="mercuryTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/mercury.jpg"
+                crossorigin="anonymous">
+            <img id="venusTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/venus.jpg"
+                crossorigin="anonymous">
+            <img id="earthTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_atmos_2048.jpg"
+                crossorigin="anonymous">
+            <img id="earthNormal"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_normal_2048.jpg"
+                crossorigin="anonymous">
+            <img id="earthSpecular"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_specular_2048.gif"
+                crossorigin="anonymous">
+            <img id="moonTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/moon_1024.jpg"
+                crossorigin="anonymous">
+            <img id="marsTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/mars.jpg"
+                crossorigin="anonymous">
+            <img id="jupiterTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/jupiter.jpg"
+                crossorigin="anonymous">
+            <img id="saturnTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/saturn.jpg"
+                crossorigin="anonymous">
+            <img id="saturnRingTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/saturn_ring.png"
+                crossorigin="anonymous">
+            <img id="uranusTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/uranus.jpg"
+                crossorigin="anonymous">
+            <img id="neptuneTexture"
+                src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/neptune.jpg"
+                crossorigin="anonymous">
         </a-assets>
-        
+
         <!-- Cámara AR -->
         <a-entity camera>
             <!-- Cursor para detección de clics/toques -->
-            <a-entity 
-                cursor="rayOrigin: mouse"
-                raycaster="objects: .clickable">
+            <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable">
             </a-entity>
         </a-entity>
-        
+
         <!-- Marcador QR (pattern-qr.patt) -->
-        <a-marker
-            id="markerQR"
-            type="pattern"
-            preset="custom"
-            url="pattern-qr.patt"
-            raycaster="objects: .clickable"
-            emitevents="true"
-            cursor="rayOrigin: mouse">
-            
+        <a-marker id="markerQR" type="pattern" preset="custom" url="pattern-qr.patt" raycaster="objects: .clickable"
+            emitevents="true" cursor="rayOrigin: mouse">
+
             <!-- Contenedor principal del sistema solar -->
             <a-entity id="solarSystem" position="0 0 0" scale="0.5 0.5 0.5">
-                
+
                 <!-- Modelo 3D del sistema solar -->
-                <!-- <a-entity 
-                    id="solarModel3D"
-                    gltf-model="#solarModel"
-                    position="0 0 0"
-                    scale="1 1 1"
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 100000; easing: linear">
-                </a-entity> -->
-                
-                <!-- Representación alternativa con primitivas (mientras no tengamos el modelo GLB) -->
+
+                <!-- Representación -->
                 <a-entity id="solarSystemPrimitives">
-                    <!-- Sol -->
-                    <a-sphere 
-                        id="sun"
-                        position="0 0 0" 
-                        radius="0.8" 
-                        color="#FDB813"
-                        material="emissive: #FDB813; emissiveIntensity: 0.5">
+                    <a-sphere id="sun" position="0 0 0" radius="0.8"
+                        material="src: #sunTexture; emissive: #FDB813; emissiveIntensity: 1.2;">
                     </a-sphere>
-                    
-                    <!-- Órbitas de los planetas (líneas circulares) -->
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="1.5" radius-outer="1.52" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2" radius-outer="2.02" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2.7" radius-outer="2.72" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="3.5" radius-outer="3.52" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="5" radius-outer="5.02" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="6.5" radius-outer="6.52" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="7.5" radius-outer="7.52" color="#333" opacity="0.3"></a-ring>
-                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="8.5" radius-outer="8.52" color="#333" opacity="0.3"></a-ring>
-                    
-                    <!-- Planetas con animación orbital -->
-                    <!-- Mercurio -->
+
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="1.5" radius-outer="1.52" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2" radius-outer="2.02" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2.7" radius-outer="2.72" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="3.5" radius-outer="3.52" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="5" radius-outer="5.02" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="6.5" radius-outer="6.52" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="7.5" radius-outer="7.52" color="#333"
+                        opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="8.5" radius-outer="8.52" color="#333"
+                        opacity="0.3"></a-ring>
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
-                        <a-sphere position="1.5 0 0" radius="0.1" color="#8C7853"></a-sphere>
+                        <a-sphere position="1.5 0 0" radius="0.1" material="src: #mercuryTexture"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Venus -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear">
-                        <a-sphere position="2 0 0" radius="0.15" color="#FFC649"></a-sphere>
+                        <a-sphere position="2 0 0" radius="0.15" material="src: #venusTexture"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Tierra -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
-                        <a-sphere position="2.7 0 0" radius="0.15" color="#4169E1"></a-sphere>
+                        <a-sphere position="2.7 0 0" radius="0.15"
+                            material="src: #earthTexture; normalMap: #earthNormal; specularMap: #earthSpecular;"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Marte -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; easing: linear">
-                        <a-sphere position="3.5 0 0" radius="0.12" color="#CD5C5C"></a-sphere>
+                        <a-sphere position="3.5 0 0" radius="0.12" material="src: #marsTexture"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Júpiter -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 40000; easing: linear">
-                        <a-sphere position="5 0 0" radius="0.35" color="#DAA520"></a-sphere>
+                        <a-sphere position="5 0 0" radius="0.35" material="src: #jupiterTexture"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Saturno -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 50000; easing: linear">
-                        <a-sphere position="6.5 0 0" radius="0.3" color="#F4A460"></a-sphere>
-                        <a-ring position="6.5 0 0" rotation="-20 0 0" radius-inner="0.4" radius-outer="0.55" color="#D2B48C"></a-ring>
+                        <a-sphere position="6.5 0 0" radius="0.3" material="src: #saturnTexture"></a-sphere>
+                        <a-ring position="6.5 0 0" rotation="-70 0 0" radius-inner="0.4" radius-outer="0.55"
+                            material="src: #saturnRingTexture; side: double;"></a-ring>
                     </a-entity>
-                    
-                    <!-- Urano -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 60000; easing: linear">
-                        <a-sphere position="7.5 0 0" radius="0.2" color="#4FD0E7"></a-sphere>
+                        <a-sphere position="7.5 0 0" radius="0.2" material="src: #uranusTexture"></a-sphere>
                     </a-entity>
-                    
-                    <!-- Neptuno -->
+
                     <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 70000; easing: linear">
-                        <a-sphere position="8.5 0 0" radius="0.2" color="#4166F5"></a-sphere>
+                        <a-sphere position="8.5 0 0" radius="0.2" material="src: #neptuneTexture"></a-sphere>
                     </a-entity>
                 </a-entity>
-                
+
                 <!-- Esferas invisibles clickeables sobre cada planeta -->
                 <!-- Estas esferas se posicionarán dinámicamente con JavaScript -->
-                <a-sphere class="clickable" data-planet="mercury" position="1.5 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="venus" position="2 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="earth" position="2.7 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="mars" position="3.5 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="jupiter" position="5 0 0" radius="0.5" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="saturn" position="6.5 0 0" radius="0.5" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="uranus" position="7.5 0 0" radius="0.4" opacity="0" visible="true"></a-sphere>
-                <a-sphere class="clickable" data-planet="neptune" position="8.5 0 0" radius="0.4" opacity="0" visible="true"></a-sphere>
-                
+                <a-sphere class="clickable" data-planet="mercury" position="1.5 0 0" radius="0.3" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="venus" position="2 0 0" radius="0.3" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="earth" position="2.7 0 0" radius="0.3" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="mars" position="3.5 0 0" radius="0.3" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="jupiter" position="5 0 0" radius="0.5" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="saturn" position="6.5 0 0" radius="0.5" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="uranus" position="7.5 0 0" radius="0.4" opacity="0"
+                    visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="neptune" position="8.5 0 0" radius="0.4" opacity="0"
+                    visible="true"></a-sphere>
+
                 <!-- Panel de información (oculto por defecto) -->
                 <a-entity id="infoPanel" visible="false" position="0 2 0">
-                    <a-plane 
-                        position="0 0 0" 
-                        width="3" 
-                        height="1.5" 
-                        color="#000000"
-                        opacity="0.8">
+                    <a-plane position="0 0 0" width="3" height="1.5" color="#000000" opacity="0.8">
                     </a-plane>
-                    <a-text 
-                        id="planetName"
-                        position="0 0.4 0.01" 
-                        value="Planeta"
-                        align="center"
-                        color="#FFFFFF"
-                        width="4"
-                        font="kelsonsans">
+                    <a-text id="planetName" position="0 0.4 0.01" value="Planeta" align="center" color="#FFFFFF"
+                        width="4" font="kelsonsans">
                     </a-text>
-                    <a-text 
-                        id="planetInfo"
-                        position="0 -0.1 0.01" 
-                        value="Información del planeta"
-                        align="center"
-                        color="#FFFFFF"
-                        width="2.5"
-                        wrap-count="40"
-                        font="kelsonsans">
+                    <a-text id="planetInfo" position="0 -0.1 0.01" value="Información del planeta" align="center"
+                        color="#FFFFFF" width="2.5" wrap-count="40" font="kelsonsans">
                     </a-text>
                 </a-entity>
-                
+
             </a-entity>
         </a-marker>
     </a-scene>
-    
+
     <script>
         // Base de datos de planetas con su información
         const planetsData = {
@@ -276,70 +284,85 @@
                 orbitDuration: 70000
             }
         };
-        
+
         // Variable para rastrear el planeta actualmente seleccionado
         let currentPlanet = null;
-        
+
         // Función para mostrar información del planeta
         function showPlanetInfo(planetName) {
             const infoPanel = document.querySelector('#infoPanel');
             const nameText = document.querySelector('#planetName');
             const infoText = document.querySelector('#planetInfo');
-            
+
             // Si se hace clic en el mismo planeta, ocultar el panel
             if (currentPlanet === planetName) {
                 infoPanel.setAttribute('visible', false);
                 currentPlanet = null;
                 return;
             }
-            
+
             // Obtener datos del planeta
             const planet = planetsData[planetName];
             if (!planet) return;
-            
+
             // Actualizar textos
             nameText.setAttribute('value', planet.name);
             infoText.setAttribute('value', planet.info);
-            
+
             // Posicionar el panel sobre el planeta
             // Calculamos la posición actual del planeta en su órbita
             const clickableSphere = document.querySelector(`[data-planet="${planetName}"]`);
             const position = clickableSphere.getAttribute('position');
-            
+
             // Colocar el panel ligeramente arriba del planeta
             infoPanel.setAttribute('position', `${position.x} ${position.y + 1.5} ${position.z}`);
-            
+
             // Mostrar el panel
             infoPanel.setAttribute('visible', true);
-            
+
             // Actualizar el planeta actual
             currentPlanet = planetName;
         }
-        
+
         // Función para actualizar las posiciones de las esferas clickeables
         function updateClickablePositions() {
             //TODO: Función para actualizar periódicamente las posiciones de las esferas invisibles según la rotación orbital
         }
-        
+
+        function displayError(message) {
+            const loadingDiv = document.querySelector('#loading');
+            const arStatus = document.querySelector('#arStatus');
+            const loadingText = loadingDiv.querySelector('.loading-text');
+
+            loadingText.innerHTML = `<h2>Error</h2><p>${message}</p>`;
+            loadingDiv.classList.remove('hidden');
+            arStatus.textContent = 'Error de AR';
+            arStatus.style.background = 'rgba(255, 0, 0, 0.7)';
+        }
+
         // Inicialización cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Configurar event listeners para cada esfera clickeable
             const clickableSpheres = document.querySelectorAll('.clickable');
-            
+            const scene = document.querySelector('a-scene');
+
+            scene.addEventListener('arjs-video-error', (e) => {
+                console.error("Error de video de AR.js:", e);
+                displayError("No se pudo acceder a la cámara. Asegúrate de que ninguna otra aplicación o pestaña la esté usando y recarga la página.");
+            });
+
             clickableSpheres.forEach(sphere => {
-                sphere.addEventListener('click', function(event) {
+                sphere.addEventListener('click', function (event) {
                     event.stopPropagation();
                     const planetName = this.getAttribute('data-planet');
                     showPlanetInfo(planetName);
-                    
-                    // Feedback visual/auditivo opcional
                     console.log(`Planeta clickeado: ${planetName}`);
                 });
             });
-            
+
             // Click en el marcador para ocultar el panel si está visible
             const marker = document.querySelector('#markerQR');
-            marker.addEventListener('click', function(event) {
+            marker.addEventListener('click', function (event) {
                 // Si el click no fue en una esfera clickeable, ocultar el panel
                 if (!event.target.classList.contains('clickable')) {
                     const infoPanel = document.querySelector('#infoPanel');
@@ -347,54 +370,46 @@
                     currentPlanet = null;
                 }
             });
-            
+
             // Eventos del marcador para actualizar el estado
-            marker.addEventListener('markerFound', function() {
+            marker.addEventListener('markerFound', function () {
                 console.log('Marcador QR detectado');
-                document.querySelector('#arStatus').textContent = '✓ Marcador detectado';
+                document.querySelector('#arStatus').textContent = 'Marcador detectado';
                 document.querySelector('#arStatus').style.background = 'rgba(0, 128, 0, 0.7)';
-                
+
                 // Ocultar pantalla de carga
                 document.querySelector('#loading').classList.add('hidden');
             });
-            
-            marker.addEventListener('markerLost', function() {
+
+            marker.addEventListener('markerLost', function () {
                 console.log('Marcador QR perdido');
                 document.querySelector('#arStatus').textContent = 'Buscando marcador...';
                 document.querySelector('#arStatus').style.background = 'rgba(255, 165, 0, 0.7)';
-                
+
                 // Ocultar panel de información si está visible
                 const infoPanel = document.querySelector('#infoPanel');
                 infoPanel.setAttribute('visible', false);
                 currentPlanet = null;
             });
-            
+
             // Configuración inicial completada
             setTimeout(() => {
-                document.querySelector('#loading').classList.add('hidden');
-                document.querySelector('#arStatus').textContent = '📷 Apunta al código QR';
-            }, 3000);
+                if (loadingDiv.classList.contains('hidden') === false) {
+                    loadingDiv.classList.add('hidden');
+                    arStatus.textContent = 'Apunta al código QR';
+                }
+            }, 5000);
         });
-        
-        // Manejo de errores de cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                console.log('Cámara iniciada correctamente');
-            })
-            .catch(function(err) {
-                console.error('Error al acceder a la cámara:', err);
-                document.querySelector('#arStatus').textContent = 'Error de cámara';
-                document.querySelector('#arStatus').style.background = 'rgba(255, 0, 0, 0.7)';
-            });
-        
+
         // Optimización para móviles: ajustar la escala según el dispositivo
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
             console.log('Dispositivo móvil detectado - Optimizando experiencia');
-            
+
             // Ajustar escala para mejor visualización en móviles
             const solarSystem = document.querySelector('#solarSystem');
             solarSystem.setAttribute('scale', '0.3 0.3 0.3');
         }
     </script>
 </body>
+
 </html>
