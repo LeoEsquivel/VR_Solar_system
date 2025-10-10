@@ -2,656 +2,399 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Sistema Solar AR - A-Frame</title>
+    <title>Sistema Solar WebAR</title>
     
-    <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    
-    <!-- AR.js para A-Frame -->
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <!-- A-Frame y AR.js -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
     <style>
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
         
-        #arjs-video {
+        /* Estilos para el mensaje de carga */
+        #loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -2;
-        }
-        
-        .ui-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 20px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            text-align: center;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        .ui-overlay h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-        
-        .ui-overlay p {
-            margin: 10px 0 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .info-panel {
-            position: fixed;
-            top: 100px;
-            left: 20px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 15px;
-            color: white;
-            font-size: 12px;
-            z-index: 100;
-            max-width: 200px;
-        }
-        
-        .info-panel h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #FFD700;
-        }
-        
-        .info-panel .celestial-body {
-            margin: 5px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-        
-        .info-panel .celestial-body::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        
-        .info-panel .sun::before {
-            background: radial-gradient(circle, #FFF59D, #FFB300);
-            box-shadow: 0 0 10px #FFB300;
-        }
-        
-        .info-panel .earth::before {
-            background: radial-gradient(circle, #64B5F6, #1565C0);
-        }
-        
-        .info-panel .moon::before {
-            background: radial-gradient(circle, #E0E0E0, #757575);
-        }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(ellipse at center, #1a237e 0%, #000051 100%);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: white;
-            z-index: 1000;
-            transition: opacity 0.5s ease-out;
+            flex-direction: column;
+            z-index: 9999;
         }
         
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .loader {
-            width: 80px;
-            height: 80px;
-            position: relative;
-        }
-        
-        .orbit-loader {
-            position: absolute;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .orbit-loader:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            top: 0;
-            left: 0;
-        }
-        
-        .orbit-loader:nth-child(2) {
-            width: 60px;
-            height: 60px;
-            top: 10px;
-            left: 10px;
-            animation-delay: 0.2s;
-        }
-        
-        .orbit-loader:nth-child(3) {
-            width: 40px;
-            height: 40px;
-            top: 20px;
-            left: 20px;
-            animation-delay: 0.4s;
-        }
-        
-        .center-sun {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: radial-gradient(circle, #FFD700, #FFA000);
-            border-radius: 50%;
-            top: 30px;
-            left: 30px;
-            animation: glow 1s ease-in-out infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px #FFD700; }
-            50% { box-shadow: 0 0 30px #FFD700, 0 0 40px #FFA000; }
+        #loading.hidden {
+            display: none;
         }
         
         .loading-text {
-            margin-top: 30px;
+            margin-top: 20px;
             font-size: 18px;
             text-align: center;
+            padding: 0 20px;
         }
         
-        .controls {
+        /* Indicador de estado AR */
+        #arStatus {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            border-radius: 25px;
-            display: flex;
-            gap: 15px;
-            z-index: 100;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 90%;
-        }
-        
-        .control-btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2));
-            border: 1px solid rgba(255,255,255,0.3);
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-        
-        .control-btn:hover {
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.3));
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
-        }
-        
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .speed-indicator {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            padding: 10px 20px;
-            border-radius: 15px;
-            color: white;
+            padding: 10px;
+            border-radius: 5px;
             font-size: 14px;
             z-index: 100;
-        }
-        
-        .speed-indicator span {
-            color: #FFD700;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <!-- Overlay de carga -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loader">
-            <div class="orbit-loader"></div>
-            <div class="orbit-loader"></div>
-            <div class="orbit-loader"></div>
-            <div class="center-sun"></div>
+    <!-- Pantalla de carga -->
+    <div id="loading">
+        <div class="loading-text">
+            <h2>Sistema Solar AR</h2>
+            <p>Apunta tu cámara al código QR marcador</p>
+            <p style="font-size: 14px; opacity: 0.8;">Permitir acceso a la cámara cuando se solicite</p>
         </div>
-        <div class="loading-text">Iniciando Sistema Solar AR...</div>
     </div>
     
-    <!-- UI Overlay -->
-    <div class="ui-overlay">
-        <h1>☀️ Sistema Solar AR</h1>
-        <p>Apunta tu cámara hacia un espacio abierto para ver el Sol, la Tierra y la Luna</p>
-    </div>
-    
-    <!-- Panel de Información -->
-    <div class="info-panel">
-        <h3>Cuerpos Celestes</h3>
-        <div class="celestial-body sun">Sol (Centro)</div>
-        <div class="celestial-body earth">Tierra (Órbita media)</div>
-        <div class="celestial-body moon">Luna (Órbita terrestre)</div>
-    </div>
-    
-    <!-- Indicador de Velocidad -->
-    <div class="speed-indicator" id="speedIndicator">
-        Velocidad: <span>1x</span>
-    </div>
-    
-    <!-- Controles -->
-    <div class="controls">
-        <button class="control-btn" onclick="toggleOrbits()">⏸️ Pausar Órbitas</button>
-        <button class="control-btn" onclick="changeSpeed()">⚡ Cambiar Velocidad</button>
-        <button class="control-btn" onclick="toggleScale()">🔍 Cambiar Escala</button>
-        <button class="control-btn" onclick="resetView()">📍 Vista Inicial</button>
-    </div>
+    <!-- Indicador de estado -->
+    <div id="arStatus">Iniciando AR...</div>
     
     <!-- Escena A-Frame con AR.js -->
     <a-scene
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         vr-mode-ui="enabled: false"
-        renderer="logarithmicDepthBuffer: true; precision: medium; antialias: true; alpha: true; colorManagement: true;"
-        loading-screen="enabled: false">
+        renderer="logarithmicDepthBuffer: true; precision: high; antialias: true; alpha: true;">
         
         <!-- Assets -->
         <a-assets>
-            <!-- Texturas del Sol -->
-            <img id="sunTexture" src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/sun.jpg" crossorigin="anonymous">
-            <!-- Texturas de la Tierra -->
-            <img id="earthTexture" src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_atmos_2048.jpg" crossorigin="anonymous">
-            <img id="earthNormal" src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/earth_normal_2048.jpg" crossorigin="anonymous">
-            <!-- Texturas de la Luna -->
-            <img id="moonTexture" src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/planets/moon_1024.jpg" crossorigin="anonymous">
+            <!-- Modelo 3D del sistema solar -->
+            <!-- <a-asset-item id="solarModel" src="modelo_solar.glb"></a-asset-item> -->
         </a-assets>
         
-        <!-- Luz ambiental suave -->
-        <a-light type="ambient" color="#222" intensity="0.3"></a-light>
-        
-        <!-- Sistema Solar Container -->
-        <a-entity id="solarSystem" position="0 0 -5">
-            
-            <!-- ========== SOL ========== -->
-            <a-sphere 
-                id="sun"
-                radius="0.4"
-                material="src: #sunTexture; emissive: #FFA000; emissiveIntensity: 0.5; roughness: 1;"
-                animation="property: rotation; to: 0 360 0; dur: 30000; easing: linear; loop: true">
-                
-                <!-- Luz puntual que emana del Sol -->
-                <a-light type="point" color="#FFF" intensity="2" distance="10" decay="2"></a-light>
-                
-                <!-- Halo del Sol -->
-                <a-sphere
-                    radius="0.45"
-                    material="color: #FFD700; opacity: 0.2; transparent: true; shader: flat;">
-                </a-sphere>
-            </a-sphere>
-            
-            <!-- ========== PIVOTE ORBITAL DE LA TIERRA ========== -->
+        <!-- Cámara AR -->
+        <a-entity camera>
+            <!-- Cursor para detección de clics/toques -->
             <a-entity 
-                id="earthOrbit"
-                animation="property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true">
-                
-                <!-- Línea orbital de la Tierra (visual) -->
-                <a-torus 
-                    color="#1976D2"
-                    radius="2"
-                    radius-tubular="0.002"
-                    rotation="90 0 0"
-                    material="opacity: 0.3; transparent: true;">
-                </a-torus>
-                
-                <!-- ========== TIERRA ========== -->
-                <a-sphere 
-                    id="earth"
-                    position="2 0 0"
-                    radius="0.15"
-                    material="src: #earthTexture; normalMap: #earthNormal; roughness: 0.5; metalness: 0.1;"
-                    animation="property: rotation; to: 0 360 0; dur: 8000; easing: linear; loop: true">
-                    
-                    <!-- Atmósfera de la Tierra -->
-                    <a-sphere 
-                        radius="0.16"
-                        material="color: #4FC3F7; opacity: 0.15; transparent: true; side: double;">
-                    </a-sphere>
-                    
-                    <!-- ========== PIVOTE ORBITAL DE LA LUNA ========== -->
-                    <a-entity 
-                        id="moonOrbit"
-                        animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true">
-                        
-                        <!-- Línea orbital de la Luna (visual) -->
-                        <a-torus 
-                            color="#9E9E9E"
-                            radius="0.5"
-                            radius-tubular="0.001"
-                            rotation="90 0 0"
-                            material="opacity: 0.2; transparent: true;">
-                        </a-torus>
-                        
-                        <!-- ========== LUNA ========== -->
-                        <a-sphere 
-                            id="moon"
-                            position="0.5 0 0"
-                            radius="0.04"
-                            material="src: #moonTexture; roughness: 1; metalness: 0;"
-                            animation="property: rotation; to: 0 360 0; dur: 5000; easing: linear; loop: true">
-                        </a-sphere>
-                    </a-entity>
-                </a-sphere>
+                cursor="rayOrigin: mouse"
+                raycaster="objects: .clickable">
             </a-entity>
-            
-            <!-- Estrellas de fondo (partículas) -->
-            <!-- <a-entity
-                id="stars"
-                geometry="primitive: sphere; radius: 50"
-                material="color: #000; shader: flat; side: back"
-                scale="-1 1 1">
-            </a-entity> -->
         </a-entity>
         
-        <!-- Cámara AR -->
-        <a-camera-static></a-camera-static>
+        <!-- Marcador QR (pattern-qr.patt) -->
+        <a-marker
+            id="markerQR"
+            type="pattern"
+            preset="custom"
+            url="pattern-qr.patt"
+            raycaster="objects: .clickable"
+            emitevents="true"
+            cursor="rayOrigin: mouse">
+            
+            <!-- Contenedor principal del sistema solar -->
+            <a-entity id="solarSystem" position="0 0 0" scale="0.5 0.5 0.5">
+                
+                <!-- Modelo 3D del sistema solar -->
+                <!-- <a-entity 
+                    id="solarModel3D"
+                    gltf-model="#solarModel"
+                    position="0 0 0"
+                    scale="1 1 1"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 100000; easing: linear">
+                </a-entity> -->
+                
+                <!-- Representación alternativa con primitivas (mientras no tengamos el modelo GLB) -->
+                <a-entity id="solarSystemPrimitives">
+                    <!-- Sol -->
+                    <a-sphere 
+                        id="sun"
+                        position="0 0 0" 
+                        radius="0.8" 
+                        color="#FDB813"
+                        material="emissive: #FDB813; emissiveIntensity: 0.5">
+                    </a-sphere>
+                    
+                    <!-- Órbitas de los planetas (líneas circulares) -->
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="1.5" radius-outer="1.52" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2" radius-outer="2.02" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="2.7" radius-outer="2.72" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="3.5" radius-outer="3.52" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="5" radius-outer="5.02" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="6.5" radius-outer="6.52" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="7.5" radius-outer="7.52" color="#333" opacity="0.3"></a-ring>
+                    <a-ring position="0 0 0" rotation="-90 0 0" radius-inner="8.5" radius-outer="8.52" color="#333" opacity="0.3"></a-ring>
+                    
+                    <!-- Planetas con animación orbital -->
+                    <!-- Mercurio -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
+                        <a-sphere position="1.5 0 0" radius="0.1" color="#8C7853"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Venus -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 15000; easing: linear">
+                        <a-sphere position="2 0 0" radius="0.15" color="#FFC649"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Tierra -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear">
+                        <a-sphere position="2.7 0 0" radius="0.15" color="#4169E1"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Marte -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; easing: linear">
+                        <a-sphere position="3.5 0 0" radius="0.12" color="#CD5C5C"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Júpiter -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 40000; easing: linear">
+                        <a-sphere position="5 0 0" radius="0.35" color="#DAA520"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Saturno -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 50000; easing: linear">
+                        <a-sphere position="6.5 0 0" radius="0.3" color="#F4A460"></a-sphere>
+                        <a-ring position="6.5 0 0" rotation="-20 0 0" radius-inner="0.4" radius-outer="0.55" color="#D2B48C"></a-ring>
+                    </a-entity>
+                    
+                    <!-- Urano -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 60000; easing: linear">
+                        <a-sphere position="7.5 0 0" radius="0.2" color="#4FD0E7"></a-sphere>
+                    </a-entity>
+                    
+                    <!-- Neptuno -->
+                    <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 70000; easing: linear">
+                        <a-sphere position="8.5 0 0" radius="0.2" color="#4166F5"></a-sphere>
+                    </a-entity>
+                </a-entity>
+                
+                <!-- Esferas invisibles clickeables sobre cada planeta -->
+                <!-- Estas esferas se posicionarán dinámicamente con JavaScript -->
+                <a-sphere class="clickable" data-planet="mercury" position="1.5 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="venus" position="2 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="earth" position="2.7 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="mars" position="3.5 0 0" radius="0.3" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="jupiter" position="5 0 0" radius="0.5" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="saturn" position="6.5 0 0" radius="0.5" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="uranus" position="7.5 0 0" radius="0.4" opacity="0" visible="true"></a-sphere>
+                <a-sphere class="clickable" data-planet="neptune" position="8.5 0 0" radius="0.4" opacity="0" visible="true"></a-sphere>
+                
+                <!-- Panel de información (oculto por defecto) -->
+                <a-entity id="infoPanel" visible="false" position="0 2 0">
+                    <a-plane 
+                        position="0 0 0" 
+                        width="3" 
+                        height="1.5" 
+                        color="#000000"
+                        opacity="0.8">
+                    </a-plane>
+                    <a-text 
+                        id="planetName"
+                        position="0 0.4 0.01" 
+                        value="Planeta"
+                        align="center"
+                        color="#FFFFFF"
+                        width="4"
+                        font="kelsonsans">
+                    </a-text>
+                    <a-text 
+                        id="planetInfo"
+                        position="0 -0.1 0.01" 
+                        value="Información del planeta"
+                        align="center"
+                        color="#FFFFFF"
+                        width="2.5"
+                        wrap-count="40"
+                        font="kelsonsans">
+                    </a-text>
+                </a-entity>
+                
+            </a-entity>
+        </a-marker>
     </a-scene>
     
     <script>
-        let orbitsActive = true;
-        let currentSpeed = 1;
-        let currentScale = 1;
-        const speeds = [0.5, 1, 2, 4];
-        let speedIndex = 1;
-        const scales = [0.7, 1, 1.5];
-        let scaleIndex = 1;
-        
-        // Duraciones originales de las animaciones
-        const originalDurations = {
-            sun: 30000,
-            earthOrbit: 20000,
-            earthRotation: 8000,
-            moonOrbit: 5000,
-            moonRotation: 5000
+        // Base de datos de planetas con su información
+        const planetsData = {
+            mercury: {
+                name: "Mercurio",
+                info: "El planeta más pequeño y cercano al Sol. Un año en Mercurio dura solo 88 días terrestres.",
+                position: { x: 1.5, y: 0, z: 0 },
+                orbitDuration: 10000
+            },
+            venus: {
+                name: "Venus",
+                info: "El planeta más caliente del sistema solar. Su atmósfera atrapa el calor como un invernadero extremo.",
+                position: { x: 2, y: 0, z: 0 },
+                orbitDuration: 15000
+            },
+            earth: {
+                name: "Tierra",
+                info: "Nuestro hogar, el único planeta conocido con vida. El 71% de su superficie está cubierta de agua.",
+                position: { x: 2.7, y: 0, z: 0 },
+                orbitDuration: 20000
+            },
+            mars: {
+                name: "Marte",
+                info: "El planeta rojo. Tiene el volcán más alto del sistema solar: el Monte Olimpo con 21 km de altura.",
+                position: { x: 3.5, y: 0, z: 0 },
+                orbitDuration: 25000
+            },
+            jupiter: {
+                name: "Júpiter",
+                info: "El gigante del sistema solar. Su Gran Mancha Roja es una tormenta más grande que la Tierra.",
+                position: { x: 5, y: 0, z: 0 },
+                orbitDuration: 40000
+            },
+            saturn: {
+                name: "Saturno",
+                info: "Famoso por sus anillos espectaculares. Es tan ligero que flotaría en agua si hubiera un océano suficientemente grande.",
+                position: { x: 6.5, y: 0, z: 0 },
+                orbitDuration: 50000
+            },
+            uranus: {
+                name: "Urano",
+                info: "Gira de lado, con una inclinación de 98 grados. Sus estaciones duran 21 años terrestres cada una.",
+                position: { x: 7.5, y: 0, z: 0 },
+                orbitDuration: 60000
+            },
+            neptune: {
+                name: "Neptuno",
+                info: "El planeta con los vientos más rápidos del sistema solar, alcanzando hasta 2,100 km/h.",
+                position: { x: 8.5, y: 0, z: 0 },
+                orbitDuration: 70000
+            }
         };
         
+        // Variable para rastrear el planeta actualmente seleccionado
+        let currentPlanet = null;
+        
+        // Función para mostrar información del planeta
+        function showPlanetInfo(planetName) {
+            const infoPanel = document.querySelector('#infoPanel');
+            const nameText = document.querySelector('#planetName');
+            const infoText = document.querySelector('#planetInfo');
+            
+            // Si se hace clic en el mismo planeta, ocultar el panel
+            if (currentPlanet === planetName) {
+                infoPanel.setAttribute('visible', false);
+                currentPlanet = null;
+                return;
+            }
+            
+            // Obtener datos del planeta
+            const planet = planetsData[planetName];
+            if (!planet) return;
+            
+            // Actualizar textos
+            nameText.setAttribute('value', planet.name);
+            infoText.setAttribute('value', planet.info);
+            
+            // Posicionar el panel sobre el planeta
+            // Calculamos la posición actual del planeta en su órbita
+            const clickableSphere = document.querySelector(`[data-planet="${planetName}"]`);
+            const position = clickableSphere.getAttribute('position');
+            
+            // Colocar el panel ligeramente arriba del planeta
+            infoPanel.setAttribute('position', `${position.x} ${position.y + 1.5} ${position.z}`);
+            
+            // Mostrar el panel
+            infoPanel.setAttribute('visible', true);
+            
+            // Actualizar el planeta actual
+            currentPlanet = planetName;
+        }
+        
+        // Función para actualizar las posiciones de las esferas clickeables
+        function updateClickablePositions() {
+            //TODO: Función para actualizar periódicamente las posiciones de las esferas invisibles según la rotación orbital
+        }
+        
+        // Inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
+            // Configurar event listeners para cada esfera clickeable
+            const clickableSpheres = document.querySelectorAll('.clickable');
+            
+            clickableSpheres.forEach(sphere => {
+                sphere.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    const planetName = this.getAttribute('data-planet');
+                    showPlanetInfo(planetName);
+                    
+                    // Feedback visual/auditivo opcional
+                    console.log(`Planeta clickeado: ${planetName}`);
+                });
+            });
+            
+            // Click en el marcador para ocultar el panel si está visible
+            const marker = document.querySelector('#markerQR');
+            marker.addEventListener('click', function(event) {
+                // Si el click no fue en una esfera clickeable, ocultar el panel
+                if (!event.target.classList.contains('clickable')) {
+                    const infoPanel = document.querySelector('#infoPanel');
+                    infoPanel.setAttribute('visible', false);
+                    currentPlanet = null;
+                }
+            });
+            
+            // Eventos del marcador para actualizar el estado
+            marker.addEventListener('markerFound', function() {
+                console.log('Marcador QR detectado');
+                document.querySelector('#arStatus').textContent = '✓ Marcador detectado';
+                document.querySelector('#arStatus').style.background = 'rgba(0, 128, 0, 0.7)';
+                
+                // Ocultar pantalla de carga
+                document.querySelector('#loading').classList.add('hidden');
+            });
+            
+            marker.addEventListener('markerLost', function() {
+                console.log('Marcador QR perdido');
+                document.querySelector('#arStatus').textContent = 'Buscando marcador...';
+                document.querySelector('#arStatus').style.background = 'rgba(255, 165, 0, 0.7)';
+                
+                // Ocultar panel de información si está visible
+                const infoPanel = document.querySelector('#infoPanel');
+                infoPanel.setAttribute('visible', false);
+                currentPlanet = null;
+            });
+            
+            // Configuración inicial completada
             setTimeout(() => {
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                loadingOverlay.classList.add('hidden');
-                setTimeout(() => {
-                    loadingOverlay.style.display = 'none';
-                }, 500);
-            }, 2500);
-            
-            createStars();
+                document.querySelector('#loading').classList.add('hidden');
+                document.querySelector('#arStatus').textContent = '📷 Apunta al código QR';
+            }, 3000);
         });
         
-        // Función para crear estrellas
-        function createStars() {
-            const starsEntity = document.getElementById('stars');
-            const starField = document.createElement('a-entity');
-            
-            for (let i = 0; i < 200; i++) {
-                const star = document.createElement('a-sphere');
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
-                const r = 45 + Math.random() * 5;
-                
-                star.setAttribute('radius', Math.random() * 0.05 + 0.02);
-                star.setAttribute('material', {
-                    color: '#FFFFFF',
-                    emissive: '#FFFFFF',
-                    emissiveIntensity: Math.random() * 0.5 + 0.5,
-                    shader: 'flat'
-                });
-                star.setAttribute('position', {
-                    x: r * Math.sin(phi) * Math.cos(theta),
-                    y: r * Math.sin(phi) * Math.sin(theta),
-                    z: r * Math.cos(phi)
-                });
-                
-                starField.appendChild(star);
-            }
-            
-            starsEntity.appendChild(starField);
-        }
-        
-        // Función para pausar/reanudar órbitas
-        function toggleOrbits() {
-            const btn = event.target;
-            
-            if (orbitsActive) {
-                // Pausar todas las animaciones
-                document.getElementById('sun').removeAttribute('animation');
-                document.getElementById('earthOrbit').removeAttribute('animation');
-                document.getElementById('earth').removeAttribute('animation');
-                document.getElementById('moonOrbit').removeAttribute('animation');
-                document.getElementById('moon').removeAttribute('animation');
-                
-                btn.innerHTML = '▶️ Reanudar Órbitas';
-            } else {
-                // Reanudar con la velocidad actual
-                setAnimationSpeed(currentSpeed);
-                btn.innerHTML = '⏸️ Pausar Órbitas';
-            }
-            orbitsActive = !orbitsActive;
-        }
-        
-        // Función para cambiar velocidad
-        function changeSpeed() {
-            speedIndex = (speedIndex + 1) % speeds.length;
-            currentSpeed = speeds[speedIndex];
-            
-            if (orbitsActive) {
-                setAnimationSpeed(currentSpeed);
-            }
-            
-            // Actualizar indicador
-            document.querySelector('#speedIndicator span').textContent = currentSpeed + 'x';
-            
-            // Efecto visual
-            const indicator = document.getElementById('speedIndicator');
-            indicator.style.transform = 'scale(1.1)';
-            setTimeout(() => {
-                indicator.style.transform = 'scale(1)';
-            }, 200);
-        }
-        
-        // Función auxiliar para establecer velocidad de animación
-        function setAnimationSpeed(speed) {
-            // Sol - rotación
-            document.getElementById('sun').setAttribute('animation', {
-                property: 'rotation',
-                to: '0 360 0',
-                dur: originalDurations.sun / speed,
-                easing: 'linear',
-                loop: true
-            });
-            
-            // Órbita de la Tierra
-            document.getElementById('earthOrbit').setAttribute('animation', {
-                property: 'rotation',
-                to: '0 360 0',
-                dur: originalDurations.earthOrbit / speed,
-                easing: 'linear',
-                loop: true
-            });
-            
-            // Rotación de la Tierra
-            document.getElementById('earth').setAttribute('animation', {
-                property: 'rotation',
-                to: '0 360 0',
-                dur: originalDurations.earthRotation / speed,
-                easing: 'linear',
-                loop: true
-            });
-            
-            // Órbita de la Luna
-            document.getElementById('moonOrbit').setAttribute('animation', {
-                property: 'rotation',
-                to: '0 360 0',
-                dur: originalDurations.moonOrbit / speed,
-                easing: 'linear',
-                loop: true
-            });
-            
-            // Rotación de la Luna
-            document.getElementById('moon').setAttribute('animation', {
-                property: 'rotation',
-                to: '0 360 0',
-                dur: originalDurations.moonRotation / speed,
-                easing: 'linear',
-                loop: true
-            });
-        }
-        
-        // Función para cambiar escala
-        function toggleScale() {
-            scaleIndex = (scaleIndex + 1) % scales.length;
-            currentScale = scales[scaleIndex];
-            
-            const solarSystem = document.getElementById('solarSystem');
-            solarSystem.setAttribute('animation__scale', {
-                property: 'scale',
-                to: `${currentScale} ${currentScale} ${currentScale}`,
-                dur: 500,
-                easing: 'easeInOutQuad'
-            });
-        }
-        
-        // Función para resetear vista
-        function resetView() {
-            const solarSystem = document.getElementById('solarSystem');
-            
-            // Resetear posición
-            solarSystem.setAttribute('position', '0 0 -5');
-            
-            // Resetear escala
-            currentScale = 1;
-            scaleIndex = 1;
-            solarSystem.setAttribute('animation__reset', {
-                property: 'scale',
-                to: '1 1 1',
-                dur: 500,
-                easing: 'easeInOutQuad'
-            });
-            
-            // Resetear velocidad
-            currentSpeed = 1;
-            speedIndex = 1;
-            if (orbitsActive) {
-                setAnimationSpeed(currentSpeed);
-            }
-            document.querySelector('#speedIndicator span').textContent = '1x';
-        }
-        
-        // Interactividad táctil - mover el sistema solar
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let initialPosition = { x: 0, y: 0, z: -5 };
-        
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 1) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-                const solarSystem = document.getElementById('solarSystem');
-                const pos = solarSystem.getAttribute('position');
-                initialPosition = { x: pos.x, y: pos.y, z: pos.z };
-            }
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 1) {
-                const deltaX = (e.touches[0].clientX - touchStartX) * 0.01;
-                const deltaY = (touchStartY - e.touches[0].clientY) * 0.01;
-                
-                const solarSystem = document.getElementById('solarSystem');
-                solarSystem.setAttribute('position', {
-                    x: initialPosition.x + deltaX,
-                    y: initialPosition.y + deltaY,
-                    z: initialPosition.z
-                });
-            }
-        });
-        
-        // Zoom con pellizco (pinch)
-        let initialDistance = 0;
-        let initialScale = 1;
-        
-        document.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 2) {
-                initialDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const solarSystem = document.getElementById('solarSystem');
-                const scale = solarSystem.getAttribute('scale');
-                initialScale = scale.x;
-            }
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 2) {
-                const currentDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                
-                const scaleFactor = currentDistance / initialDistance;
-                const newScale = Math.max(0.5, Math.min(3, initialScale * scaleFactor));
-                
-                const solarSystem = document.getElementById('solarSystem');
-                solarSystem.setAttribute('scale', `${newScale} ${newScale} ${newScale}`);
-            }
-        });
-        
-        window.addEventListener('arjs-video-loaded', (e) => {
-            console.log('Sistema Solar AR cargado correctamente');
-        });
-        
+        // Manejo de errores de cámara
         navigator.mediaDevices.getUserMedia({ video: true })
-            .catch(err => {
+            .then(function(stream) {
+                console.log('Cámara iniciada correctamente');
+            })
+            .catch(function(err) {
                 console.error('Error al acceder a la cámara:', err);
-                alert('Por favor, permite el acceso a la cámara para usar la experiencia AR');
+                document.querySelector('#arStatus').textContent = 'Error de cámara';
+                document.querySelector('#arStatus').style.background = 'rgba(255, 0, 0, 0.7)';
             });
+        
+        // Optimización para móviles: ajustar la escala según el dispositivo
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            console.log('Dispositivo móvil detectado - Optimizando experiencia');
+            
+            // Ajustar escala para mejor visualización en móviles
+            const solarSystem = document.querySelector('#solarSystem');
+            solarSystem.setAttribute('scale', '0.3 0.3 0.3');
+        }
     </script>
 </body>
 </html>
